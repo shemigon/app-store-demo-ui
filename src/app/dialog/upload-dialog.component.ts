@@ -1,11 +1,11 @@
 import { Component, ViewChild } from '@angular/core';
 import { MatDialogRef } from '@angular/material';
 import { forkJoin } from 'rxjs';
-import { FileService } from "../file.service";
-import { catchError } from "rxjs/operators";
-import { Observable } from "rxjs/internal/Observable";
-import { ObservableInput } from "rxjs/internal/types";
-import { of } from "rxjs/internal/observable/of";
+import { FileService } from '../file.service';
+import { catchError } from 'rxjs/operators';
+import { Observable } from 'rxjs/internal/Observable';
+import { ObservableInput } from 'rxjs/internal/types';
+import { of } from 'rxjs/internal/observable/of';
 
 @Component({
   selector: 'app-dialog',
@@ -13,7 +13,8 @@ import { of } from "rxjs/internal/observable/of";
   styleUrls: ['./upload-dialog.component.less']
 })
 export class UploadDialogComponent {
-  @ViewChild('file') file;
+  @ViewChild('file')
+  file;
   public files: Set<File> = new Set();
 
   progress;
@@ -23,8 +24,7 @@ export class UploadDialogComponent {
   uploading = false;
   uploadSuccessful = false;
 
-  constructor(public dialogRef: MatDialogRef<UploadDialogComponent>,
-              public fileService: FileService) {}
+  constructor(public dialogRef: MatDialogRef<UploadDialogComponent>, public fileService: FileService) {}
 
   addFiles() {
     this.file.nativeElement.click();
@@ -32,7 +32,7 @@ export class UploadDialogComponent {
 
   onFilesAdded() {
     const files: { [key: string]: File } = this.file.nativeElement.files;
-    for (let key in files) {
+    for (const key in files) {
       if (!isNaN(parseInt(key, 10))) {
         this.files.add(files[key]);
       }
@@ -52,11 +52,12 @@ export class UploadDialogComponent {
     this.progress = this.fileService.uploadFile(this.files);
 
     // convert the progress map into an array
-    let allProgressObservables = [];
-    for (let key in this.progress) {
-      allProgressObservables.push(this.progress[key].progress);
+    const allProgressObservables = [];
+    for (const key in this.progress) {
+      if (key) {
+        allProgressObservables.push(this.progress[key].progress);
+      }
     }
-
     // Adjust the state variables
 
     // The OK-button should have the text "Finish" now
@@ -72,14 +73,16 @@ export class UploadDialogComponent {
     // When all progress-observables are completed...
     forkJoin(allProgressObservables)
       .pipe(
-        catchError((err: any, caught: Observable<any>):ObservableInput<{}> => {
-          this.primaryButtonText = 'Close';
-          this.canBeClosed = true;
-          this.dialogRef.disableClose = false;
-          this.uploadSuccessful = false;
-          this.uploading = false;
-          return of({});
-        })
+        catchError(
+          (err: any, caught: Observable<any>): ObservableInput<{}> => {
+            this.primaryButtonText = 'Close';
+            this.canBeClosed = true;
+            this.dialogRef.disableClose = false;
+            this.uploadSuccessful = false;
+            this.uploading = false;
+            return of({});
+          }
+        )
       )
       .subscribe(end => {
         this.fileService.loadFiles();
