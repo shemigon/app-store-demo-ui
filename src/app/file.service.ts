@@ -12,12 +12,11 @@ import {
   HttpInterceptor,
   HttpRequest,
   HttpResponse
-} from "@angular/common/http";
-import { MatSnackBar } from "@angular/material";
-import { tap } from "rxjs/operators";
-import { Subject } from "rxjs/internal/Subject";
-import { environment } from "../environments/environment";
-
+} from '@angular/common/http';
+import { MatSnackBar } from '@angular/material';
+import { tap } from 'rxjs/operators';
+import { Subject } from 'rxjs/internal/Subject';
+import { environment } from '../environments/environment';
 
 interface BaseResponse {
   status: string;
@@ -33,10 +32,7 @@ interface ErrorResponse extends BaseResponse {
 
 @Injectable()
 export class ErrorHandler {
-
-  constructor(
-    public snackbar: MatSnackBar,
-  ) {}
+  constructor(public snackbar: MatSnackBar) {}
 
   public handleError(err: any) {
     this.snackbar.open(err.message, 'close');
@@ -45,19 +41,18 @@ export class ErrorHandler {
 
 @Injectable()
 export class RequestInterceptor implements HttpInterceptor {
-
-  constructor(
-    public errorHandler: ErrorHandler,
-  ) {}
+  constructor(public errorHandler: ErrorHandler) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-
     return next.handle(request).pipe(
-      tap((event: HttpEvent<any>) => {}, (err: any) => {
-        if (err instanceof HttpErrorResponse) {
-          this.errorHandler.handleError(err);
+      tap(
+        (event: HttpEvent<any>) => {},
+        (err: any) => {
+          if (err instanceof HttpErrorResponse) {
+            this.errorHandler.handleError(err);
+          }
         }
-      })
+      )
     );
   }
 }
@@ -70,11 +65,8 @@ export class FileService {
 
   protected user: User;
 
-  constructor(
-    private userService: UserService,
-    private http: HttpClient
-  ) {
-    userService.getUser().subscribe((user) => {
+  constructor(private userService: UserService, private http: HttpClient) {
+    userService.getUser().subscribe(user => {
       this.user = user;
       if (user) {
         this.loadFiles();
@@ -85,10 +77,9 @@ export class FileService {
   }
 
   public loadFiles() {
-    this.http.get<FileListResponse>(this.url, this.reqOptions())
-      .subscribe((data: FileListResponse) => {
-        this.fileList.next(data.items);
-      });
+    this.http.get<FileListResponse>(this.url, this.reqOptions()).subscribe((data: FileListResponse) => {
+      this.fileList.next(data.items);
+    });
   }
 
   protected reqOptions(headers: {} = {}, options: {} = {}): {} {
@@ -101,13 +92,9 @@ export class FileService {
 
   deleteFile(file: UserFile): void {
     if (this.user) {
-      this.http.delete(
-        this.url + '/' + file.id,
-        this.reqOptions()
-      )
-        .subscribe(() => {
-          this.loadFiles();
-        })
+      this.http.delete(this.url + '/' + file.id, this.reqOptions()).subscribe(() => {
+        this.loadFiles();
+      });
     }
   }
 
@@ -122,8 +109,7 @@ export class FileService {
 
       // create a http-post request and pass the form
       // tell it to report the upload progress
-      const req = new HttpRequest('POST', this.url, formData,
-        this.reqOptions({}, {reportProgress: true}));
+      const req = new HttpRequest('POST', this.url, formData, this.reqOptions({}, { reportProgress: true }));
 
       // create a new progress-subject for every file
       const progress = new Subject<number>();
@@ -131,14 +117,12 @@ export class FileService {
       // send the http-request and subscribe for progress-updates
       this.http.request(req).subscribe(event => {
         if (event.type === HttpEventType.UploadProgress) {
-
           // calculate the progress percentage
-          const percentDone = Math.round(100 * event.loaded / event.total);
+          const percentDone = Math.round((100 * event.loaded) / event.total);
 
           // pass the percentage into the progress-stream
           progress.next(percentDone);
         } else if (event instanceof HttpResponse) {
-
           // Close the progress-stream if we get an answer form the API
           // The upload is complete
           progress.complete();
@@ -158,24 +142,33 @@ export class FileService {
   downloadFile(file: UserFile) {
     if (this.user) {
       this.http
-        .get(this.url + '/' + file.id, this.reqOptions({
-          'content-type': file.type,
-        }, {
-          responseType: 'blob',
-        }))
-        .subscribe(data => {
-          let url = window.URL.createObjectURL(data);
-          let a = document.createElement('a');
-          document.body.appendChild(a);
-          a.setAttribute('style', 'display: none');
-          a.href = url;
-          a.download = file.name;
-          a.click();
-          window.URL.revokeObjectURL(url);
-          a.remove(); // remove the element
-        }, error => {
-          console.log('download error:', JSON.stringify(error));
-        });
+        .get(
+          this.url + '/' + file.id,
+          this.reqOptions(
+            {
+              'content-type': file.type
+            },
+            {
+              responseType: 'blob'
+            }
+          )
+        )
+        .subscribe(
+          data => {
+            const url = window.URL.createObjectURL(data);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.setAttribute('style', 'display: none');
+            a.href = url;
+            a.download = file.name;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove(); // remove the element
+          },
+          error => {
+            console.log('download error:', JSON.stringify(error));
+          }
+        );
     }
   }
 }
